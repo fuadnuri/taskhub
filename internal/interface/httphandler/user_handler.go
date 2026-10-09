@@ -1,53 +1,124 @@
 package httpHandler
 
-
 import (
 	"net/http"
-	"strconv"
-	"github.com/gin-gonic/gin"
 
-	"github.com/fuadroid/taskhub/internal/core/domain/entities"
-	"github.com/fuadroid/taskhub/internal/core/application/service"
+	"github.com/fuadnuri/taskhub/internal/core/application/dto"
+	"github.com/fuadnuri/taskhub/internal/core/application/service"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type UserHandler struct {
-	service *service.UserService
+	service service.IUserService
 }
 
-func NewUserHandler(service *service.UserService) *UserHandler{
+func NewUserHandler(service service.IUserService) *UserHandler {
 	return &UserHandler{
-		service:service,
+		service: service,
 	}
 }
 
-func (h *UserHandler) Create(c *gin.Context){
-	var user entities.UserEntity
-	if err:=c.ShouldBind(&user); err!=nil{
-		c.JSON(http.StatusBadRequest,gin.H{
-			"error":err.Error(),
-		})
-		return 
-	}
-
-	if err:=h.service.CreateUser(&user);err!=nil{
-		c.JSON(http.StatusInternalServerError,gin.H{
-			"error",err.Error(),
-		})
+func (h *UserHandler) Create(c *gin.Context) {
+	var req dto.CreateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-}
 
-
-func (h *UserHandler)GetAllUsers(c *gin.Context){
-	
-	if users,err:=h.service.GetAll().Error; err!=nil{
-		c.JSON(http.StatusInternalServerError,gin.H{
-			"error":"internal server error",
-		})
-		return 
-	}else{
-		c.JSON(http.StatusOk,user)
+	user, err := h.service.CreateUser(c.Request.Context(), req)
+	if err != nil {
+		RespondError(c, err)
+		return
 	}
+
+	RespondCreated(c, user)
 }
 
-//the rest of the user related endpionts goes here
+func (h *UserHandler) GetByID(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id format"})
+		return
+	}
+
+	user, err := h.service.GetByID(c.Request.Context(), id)
+	if err != nil {
+		RespondError(c, err)
+		return
+	}
+
+	RespondOK(c, user)
+}
+
+func (h *UserHandler) GetAllUsers(c *gin.Context) {
+	users, err := h.service.GetAll(c.Request.Context())
+	if err != nil {
+		RespondError(c, err)
+		return
+	}
+
+	RespondOK(c, users)
+}
+
+func (h *UserHandler) Update(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id format"})
+		return
+	}
+
+	var req dto.UpdateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := h.service.Update(c.Request.Context(), id, req)
+	if err != nil {
+		RespondError(c, err)
+		return
+	}
+
+	RespondOK(c, user)
+}
+
+func (h *UserHandler) ChangePassword(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id format"})
+		return
+	}
+
+	var req dto.ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.service.ChangePassword(c.Request.Context(), id, req); err != nil {
+		RespondError(c, err)
+		return
+	}
+
+	RespondOK(c, gin.H{"message": "password updated successfully"})
+}
+
+func (h *UserHandler) Delete(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := uuid.Parse(idParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id format"})
+		return
+	}
+
+	if err := h.service.Delete(c.Request.Context(), id); err != nil {
+		RespondError(c, err)
+		return
+	}
+
+	RespondOK(c, gin.H{"message": "user deleted successfully"})
+}
