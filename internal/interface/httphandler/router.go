@@ -112,8 +112,8 @@ func SetupRouter(cfg RouterConfig) *gin.Engine {
 	if cfg.TaskHandler != nil {
 		tasks := protected.Group("")
 		{
-			tasks.POST("/projects/:project_id/tasks", cfg.TaskHandler.Create)
-			tasks.GET("/projects/:project_id/tasks", cfg.TaskHandler.GetByProject)
+			tasks.POST("/projects/:id/tasks", cfg.TaskHandler.Create)
+			tasks.GET("/projects/:id/tasks", cfg.TaskHandler.GetByProject)
 			tasks.GET("/tasks", cfg.TaskHandler.GetByOrg)
 			tasks.GET("/tasks/:id", cfg.TaskHandler.GetByID)
 			tasks.PUT("/tasks/:id", cfg.TaskHandler.Update)

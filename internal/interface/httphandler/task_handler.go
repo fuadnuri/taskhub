@@ -31,7 +31,11 @@ func (h *TaskHandler) Create(c *gin.Context) {
 		return
 	}
 
-	projectID, err := uuid.Parse(c.Param("project_id"))
+	paramID := c.Param("id")
+	if paramID == "" {
+		paramID = c.Param("project_id")
+	}
+	projectID, err := uuid.Parse(paramID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid project id format"})
 		return
@@ -69,7 +73,11 @@ func (h *TaskHandler) GetByID(c *gin.Context) {
 }
 
 func (h *TaskHandler) GetByProject(c *gin.Context) {
-	projectID, err := uuid.Parse(c.Param("project_id"))
+	paramID := c.Param("id")
+	if paramID == "" {
+		paramID = c.Param("project_id")
+	}
+	projectID, err := uuid.Parse(paramID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid project id format"})
 		return
