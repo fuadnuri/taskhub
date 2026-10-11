@@ -8,8 +8,10 @@
 *.so
 *.dylib
 
-# Test binary
+# Tests & coverage
 *.test
+/tests/
+/test/
 
 # Output of go coverage tool
 *.out

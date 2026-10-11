@@ -1,0 +1,203 @@
+erDiagram
+
+    USER {
+        UUID id PK
+        VARCHAR email UK
+        TEXT password_hash
+        VARCHAR first_name
+        VARCHAR last_name
+        BOOLEAN is_active
+        BOOLEAN email_verified
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+
+    ORGANIZATION {
+        UUID id PK
+        VARCHAR name
+        VARCHAR slug UK
+        BOOLEAN is_active
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+
+    ORGANIZATION_MEMBER {
+        UUID id PK
+        UUID organization_id FK
+        UUID user_id FK
+        UUID role_id FK
+        TIMESTAMPTZ joined_at
+    }
+
+    ROLE {
+        UUID id PK
+        UUID organization_id FK
+        VARCHAR name
+        TEXT description
+        TIMESTAMPTZ created_at
+    }
+
+    PERMISSION {
+        UUID id PK
+        VARCHAR name UK
+        TEXT description
+    }
+
+    ROLE_PERMISSION {
+        UUID role_id PK, FK
+        UUID permission_id PK, FK
+    }
+
+    ORGANIZATION_INVITATION {
+        UUID id PK
+        UUID organization_id FK
+        VARCHAR email
+        UUID role_id FK
+        TEXT token_hash UK
+        TIMESTAMPTZ expires_at
+        TIMESTAMPTZ accepted_at
+        TIMESTAMPTZ created_at
+    }
+
+    PROJECT {
+        UUID id PK
+        UUID organization_id FK
+        UUID created_by FK
+        VARCHAR name
+        TEXT description
+        VARCHAR status
+        DATE start_date
+        DATE due_date
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+
+    PROJECT_MEMBER {
+        UUID project_id PK, FK
+        UUID user_id PK, FK
+        TIMESTAMPTZ joined_at
+    }
+
+    TASK {
+        UUID id PK
+        UUID organization_id FK
+        UUID project_id FK
+        UUID created_by FK
+        VARCHAR title
+        TEXT description
+        VARCHAR status
+        VARCHAR priority
+        TIMESTAMPTZ due_date
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+
+    TASK_ASSIGNEE {
+        UUID task_id PK, FK
+        UUID user_id PK, FK
+        TIMESTAMPTZ assigned_at
+    }
+
+    TASK_COMMENT {
+        UUID id PK
+        UUID task_id FK
+        UUID user_id FK
+        TEXT content
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+
+    NOTIFICATION {
+        UUID id PK
+        UUID organization_id FK
+        UUID user_id FK
+        VARCHAR type
+        VARCHAR title
+        TEXT message
+        JSONB data
+        TIMESTAMPTZ read_at
+        TIMESTAMPTZ created_at
+    }
+
+    REFRESH_TOKEN {
+        UUID id PK
+        UUID user_id FK
+        TEXT token_hash UK
+        TIMESTAMPTZ expires_at
+        TIMESTAMPTZ revoked_at
+        TIMESTAMPTZ created_at
+    }
+
+    AUDIT_LOG {
+        UUID id PK
+        UUID organization_id FK
+        UUID user_id FK
+        VARCHAR action
+        VARCHAR resource_type
+        UUID resource_id
+        JSONB metadata
+        INET ip_address
+        TIMESTAMPTZ created_at
+    }
+
+
+    %% =========================
+    %% USER / AUTH
+    %% =========================
+
+    USER ||--o{ REFRESH_TOKEN : owns
+
+    USER ||--o{ ORGANIZATION_MEMBER : belongs_to
+    ORGANIZATION ||--o{ ORGANIZATION_MEMBER : has
+
+    %% =========================
+    %% RBAC
+    %% =========================
+
+    ORGANIZATION ||--o{ ROLE : defines
+
+    ROLE ||--o{ ORGANIZATION_MEMBER : assigned_to
+
+    ROLE ||--o{ ROLE_PERMISSION : has
+    PERMISSION ||--o{ ROLE_PERMISSION : grants
+
+    ORGANIZATION ||--o{ ORGANIZATION_INVITATION : sends
+    ROLE ||--o{ ORGANIZATION_INVITATION : assigns
+
+    %% =========================
+    %% PROJECTS
+    %% =========================
+
+    ORGANIZATION ||--o{ PROJECT : owns
+    USER ||--o{ PROJECT : creates
+
+    PROJECT ||--o{ PROJECT_MEMBER : has
+    USER ||--o{ PROJECT_MEMBER : participates_in
+
+    %% =========================
+    %% TASKS
+    %% =========================
+
+    PROJECT ||--o{ TASK : contains
+    ORGANIZATION ||--o{ TASK : owns
+    USER ||--o{ TASK : creates
+
+    TASK ||--o{ TASK_ASSIGNEE : assigned_to
+    USER ||--o{ TASK_ASSIGNEE : works_on
+
+    TASK ||--o{ TASK_COMMENT : has
+    USER ||--o{ TASK_COMMENT : writes
+
+    %% =========================
+    %% NOTIFICATIONS
+    %% =========================
+
+    ORGANIZATION ||--o{ NOTIFICATION : owns
+    USER ||--o{ NOTIFICATION : receives
+
+    %% =========================
+    %% AUDIT
+    %% =========================
+
+    ORGANIZATION ||--o{ AUDIT_LOG : contains
+    USER ||--o{ AUDIT_LOG : performs
